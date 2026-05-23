@@ -49,41 +49,35 @@ export async function claimJob(workerId: string): Promise<AutomationJob | null> 
 }
 
 export async function getSubscription(subscriptionId: string): Promise<Subscription | null> {
-  const { data, error } = await supabase
-    .schema('ds')
-    .from('subscriptions')
-    .select('id, subject_name, subject_email, subject_city, subject_state')
-    .eq('id', subscriptionId)
-    .single()
-  if (error) return null
-  return data
+  const { data, error } = await supabase.rpc('get_subscription', {
+    p_subscription_id: subscriptionId
+  })
+  if (error) {
+    console.error('[supabase] getSubscription error:', error.message)
+    return null
+  }
+  return data?.[0] ?? null
 }
 
 export async function markJobRunning(jobId: string) {
-  await supabase.schema('ds').from('automation_jobs').update({
-    status: 'running',
-    started_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }).eq('id', jobId)
+  const { error } = await supabase.rpc('mark_job_running', { p_job_id: jobId })
+  if (error) console.error('[supabase] markJobRunning error:', error.message)
 }
 
 export async function markJobComplete(jobId: string, result: Record<string, unknown>) {
-  await supabase.schema('ds').from('automation_jobs').update({
-    status: 'completed',
-    completed_at: new Date().toISOString(),
-    result,
-    updated_at: new Date().toISOString()
-  }).eq('id', jobId)
+  const { error } = await supabase.rpc('mark_job_complete', {
+    p_job_id: jobId,
+    p_result: result
+  })
+  if (error) console.error('[supabase] markJobComplete error:', error.message)
 }
 
 export async function markJobFailed(jobId: string, errorMessage: string, attempts: number, maxAttempts: number) {
-  const shouldRetry = attempts < maxAttempts
-  await supabase.schema('ds').from('automation_jobs').update({
-    status: shouldRetry ? 'pending' : 'failed',
-    error_message: errorMessage,
-    next_run_at: shouldRetry
-      ? new Date(Date.now() + Math.pow(2, attempts) * 60000).toISOString()
-      : null,
-    updated_at: new Date().toISOString()
-  }).eq('id', jobId)
+  const { error } = await supabase.rpc('mark_job_failed', {
+    p_job_id: jobId,
+    p_error: errorMessage,
+    p_attempts: attempts,
+    p_max_attempts: maxAttempts
+  })
+  if (error) console.error('[supabase] markJobFailed error:', error.message)
 }
