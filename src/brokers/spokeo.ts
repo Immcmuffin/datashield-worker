@@ -1,6 +1,11 @@
 import { Page } from 'playwright'
 import { Subscription, getSecret } from '../supabase'
 
+interface CaptchaResponse {
+  status: number
+  request: string
+}
+
 async function solveCaptcha(page: Page, apiKey: string): Promise<boolean> {
   // Get the reCAPTCHA site key from the page
   const siteKey = await page.evaluate(() => {
@@ -20,7 +25,7 @@ async function solveCaptcha(page: Page, apiKey: string): Promise<boolean> {
   const submitRes = await fetch(
     `https://2captcha.com/in.php?key=${apiKey}&method=userrecaptcha&googlekey=${siteKey}&pageurl=${encodeURIComponent(pageUrl)}&json=1`
   )
-  const submitData = await submitRes.json()
+  const submitData = await submitRes.json() as CaptchaResponse
 
   if (submitData.status !== 1) {
     console.error('[spokeo] 2Captcha submission failed:', submitData)
@@ -36,7 +41,7 @@ async function solveCaptcha(page: Page, apiKey: string): Promise<boolean> {
     const pollRes = await fetch(
       `https://2captcha.com/res.php?key=${apiKey}&action=get&id=${taskId}&json=1`
     )
-    const pollData = await pollRes.json()
+    const pollData = await pollRes.json() as CaptchaResponse
 
     if (pollData.status === 1) {
       const token = pollData.request
