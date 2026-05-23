@@ -7,6 +7,8 @@ RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm run build
+
+# Force fresh build: 1779564669
+RUN rm -rf dist && npm run build && echo "Build complete: $(ls dist/)"
 
 CMD ["npm", "start"]
