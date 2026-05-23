@@ -1,4 +1,3 @@
-// Polyfill WebSocket globally before importing Supabase (required for Node < 22)
 import * as WS from 'ws'
 ;(global as any).WebSocket = WS.WebSocket ?? WS
 
@@ -38,25 +37,20 @@ export interface Subscription {
 }
 
 export async function claimJob(workerId: string): Promise<AutomationJob | null> {
-  const { data, error } = await supabase.rpc('claim_automation_job', {
-    p_worker_id: workerId
-  })
-  if (error) {
-    console.error('[supabase] claim error:', error.message)
-    return null
-  }
+  const { data, error } = await supabase.rpc('claim_automation_job', { p_worker_id: workerId })
+  if (error) { console.error('[supabase] claim error:', error.message); return null }
   return data?.[0] ?? null
 }
 
 export async function getSubscription(subscriptionId: string): Promise<Subscription | null> {
-  const { data, error } = await supabase.rpc('get_subscription', {
-    p_subscription_id: subscriptionId
-  })
-  if (error) {
-    console.error('[supabase] getSubscription error:', error.message)
-    return null
-  }
+  const { data, error } = await supabase.rpc('get_subscription', { p_subscription_id: subscriptionId })
+  if (error) { console.error('[supabase] getSubscription error:', error.message); return null }
   return data?.[0] ?? null
+}
+
+export async function getSecret(name: string): Promise<string | null> {
+  const { data } = await supabase.rpc('get_secret', { p_name: name })
+  return data ?? null
 }
 
 export async function markJobRunning(jobId: string) {
@@ -65,19 +59,13 @@ export async function markJobRunning(jobId: string) {
 }
 
 export async function markJobComplete(jobId: string, result: Record<string, unknown>) {
-  const { error } = await supabase.rpc('mark_job_complete', {
-    p_job_id: jobId,
-    p_result: result
-  })
+  const { error } = await supabase.rpc('mark_job_complete', { p_job_id: jobId, p_result: result })
   if (error) console.error('[supabase] markJobComplete error:', error.message)
 }
 
 export async function markJobFailed(jobId: string, errorMessage: string, attempts: number, maxAttempts: number) {
   const { error } = await supabase.rpc('mark_job_failed', {
-    p_job_id: jobId,
-    p_error: errorMessage,
-    p_attempts: attempts,
-    p_max_attempts: maxAttempts
+    p_job_id: jobId, p_error: errorMessage, p_attempts: attempts, p_max_attempts: maxAttempts
   })
   if (error) console.error('[supabase] markJobFailed error:', error.message)
 }
