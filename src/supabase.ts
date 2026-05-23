@@ -1,5 +1,8 @@
+// Polyfill WebSocket globally before importing Supabase (required for Node < 22)
+import * as WS from 'ws'
+;(global as any).WebSocket = WS.WebSocket ?? WS
+
 import { createClient } from '@supabase/supabase-js'
-import ws from 'ws'
 
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -9,8 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false },
-  realtime: { transport: ws as any }
+  auth: { persistSession: false }
 })
 
 export interface AutomationJob {
